@@ -1,4 +1,5 @@
 #!/bin/bash
+# written for amazon linux base 64 bit
 # update OS
 yum -y update
 # enable epel repo

@@ -1,4 +1,5 @@
 #!/bin/bash
+# written for amazon linux base
 # update OS
 yum -y update
 # ensure mdadm is installed
