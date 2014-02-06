@@ -1,0 +1,36 @@
+#!/bin/bash
+# update OS
+/usr/bin/yum -y update
+# install puppet client
+/bin/rpm -ivh http://yum.puppetlabs.com/el/6/products/i386/puppetlabs-release-6-7.noarch.rpm
+/usr/bin/yum -y install puppet
+# create puppet manifest
+read -d '' my_class << "BLOCKBLOCK"
+	package { 'httpd':
+		ensure => installed,
+	}
+	
+	service { 'httpd':
+        enable => true,
+        ensure => running,
+        require => Package['httpd'],
+    }
+$indexcontent="<!DOCTYPE html>
+<html>
+<body>
+<h1>I Am Bootstrapped</h1>
+<h3>See how easy this is?</h3>
+</body>
+</html>
+"
+    file { "/var/www/html/index.html":
+    	mode => 644,
+    	owner => 'root',
+    	group => 'root',
+    	ensure => present,
+    	content => "$indexcontent",
+    }
+BLOCKBLOCK
+/bin/echo "$my_class" > /opt/apache.pp
+# apply puppet manifest from local file
+/usr/bin/puppet apply /opt/apache.pp
