@@ -22,5 +22,5 @@ EOF
 # DON'T FORGET TO UPDATE THIS LINE WITH YOUR ROUTE TABLE - if you need more than one, copy and paste multiple lines with
 # multiple route tables
 #
-aws ec2 replace-route --route-table-id rtb-999999 --destination-cidr-block 0.0.0.0/0 --instance-id $IID
+aws ec2 replace-route --route-table-id rtb-999999 --destination-cidr-block 0.0.0.0/0 --instance-id $IID --region $REGION
 
