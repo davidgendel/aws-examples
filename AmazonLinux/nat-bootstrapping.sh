@@ -3,6 +3,8 @@
 # This is a simple bootstrapping script designed for automatically configuring an Amazon Linux instance to serve as a NAT instance.
 # This is great to use in combination with Auto Scaling - min1/max1 for a self healing NAT solution
 #
+# This script assumes you have a proper EC2 Role created with two permissions: ec2:ModifyInstanceAttribute & ec2:ReplaceRoute
+#
 yum -y update
 IID=`curl --silent http://169.254.169.254/latest/meta-data/instance-id`
 REGION=`curl --silent http://169.254.169.254/latest/meta-data/placement/availability-zone/ | sed '$s/.$//'`
