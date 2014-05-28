@@ -50,8 +50,8 @@ do
         DIFF=`expr $ZZZ - $YYY`
         if [ $DIFF -gt 259201 ]
         then
-                aws ec2 delete-snapshot --snapshot-id $SNAPID
-                logger -s Deleted older snapshot - $SNAPID
+                aws ec2 delete-snapshot --snapshot-id $ii
+                logger -s Deleted older snapshot - $ii
         fi
 done
 
