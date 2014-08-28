@@ -4,7 +4,7 @@
 yum -y update
 # enable epel repo
 sed -i '0,/enabled\=0/{s/enabled\=0/enabled\=1/}' /etc/yum.repos.d/epel.repo
-# install stres tool
+# install stress tool
 yum -y install stress
 logger -s -t AWS-STRESS-DEMO Begin stress test demo
 # begin stressing system in series of ramping up waves, logging stages to messages log
