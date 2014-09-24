@@ -1,9 +1,7 @@
 #!/bin/bash
-# written for amazon linux base 64 bit
+# written for amazon linux base 64 bit - september 2014 or newer
 # update OS
 yum -y update
-# enable epel repo
-sed -i '0,/enabled\=0/{s/enabled\=0/enabled\=1/}' /etc/yum.repos.d/epel.repo
 # install stress tool
 yum -y install stress
 logger -s -t AWS-STRESS-DEMO Begin stress test demo
