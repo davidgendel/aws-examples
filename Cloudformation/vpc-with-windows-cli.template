@@ -1,0 +1,694 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Baseline Cloudformation for VPC with NAT, and Windows CLI Instance",
+  "Parameters": {
+    "VPCCIDR": {
+      "Description": "CIDR Block for VPC",
+      "Type": "String",
+      "Default": "10.50.0.0/16",
+      "AllowedValues": [
+        "10.50.0.0/16"
+      ]
+    },
+    "PublicSubnet1Param": {
+      "Description": "Public Subnet 1",
+      "Type": "String",
+      "Default": "10.50.10.0/24",
+      "AllowedValues": [
+        "10.50.10.0/24"
+      ]
+    },
+    "PublicSubnet2Param": {
+      "Description": "Public Subnet 2",
+      "Type": "String",
+      "Default": "10.50.15.0/24",
+      "AllowedValues": [
+        "10.50.15.0/24"
+      ]
+    },
+    "PrivateSubnet1Param": {
+      "Description": "Private Subnet 1",
+      "Type": "String",
+      "Default": "10.50.50.0/24",
+      "AllowedValues": [
+        "10.50.50.0/24"
+      ]
+    },
+    "PrivateSubnet2Param": {
+      "Description": "Private Subnet 2",
+      "Type": "String",
+      "Default": "10.50.55.0/24",
+      "AllowedValues": [
+        "10.50.55.0/24"
+      ]
+    },
+    "KeyName": {
+      "Type": "String",
+      "Description": "Keyname to launch EC2 instances",
+      "Default": "default-key"
+    }
+  },
+  "Mappings": {
+    "AmazonLinuxAMI": {
+      "us-east-1": {
+        "AMI": "ami-b66ed3de"
+      },
+      "us-west-1": {
+        "AMI": "ami-4b6f650e"
+      },
+      "us-west-2": {
+        "AMI": "ami-b5a7ea85"
+      },
+      "eu-west-1": {
+        "AMI": "ami-6e7bd919"
+      },
+      "sa-east-1": {
+        "AMI": "ami-8737829a"
+      },
+      "ap-southeast-1": {
+        "AMI": "ami-ac5c7afe"
+      },
+      "ap-southeast-2": {
+        "AMI": "ami-63f79559"
+      },
+      "ap-northeast-1": {
+        "AMI": "ami-4985b048"
+      }
+    },
+    "Win2012R2AMI": {
+      "us-east-1": {
+        "AMI": "ami-b27830da"
+      },
+      "us-west-1": {
+        "AMI": "ami-52869d17"
+      },
+      "us-west-2": {
+        "AMI": "ami-59f2d769"
+      },
+      "eu-west-1": {
+        "AMI": "ami-69ae251e"
+      },
+      "sa-east-1": {
+        "AMI": "ami-2b378836"
+      },
+      "ap-southeast-1": {
+        "AMI": "ami-d0eedb82"
+      },
+      "ap-southeast-2": {
+        "AMI": "ami-89a2d5b3"
+      },
+      "ap-northeast-1": {
+        "AMI": "ami-a79572a7"
+      }
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VPCCIDR"
+        },
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "Tags": [
+          {
+            "Key": "VPC",
+            "Value": "NAT-and-CLI"
+          },
+          {
+            "Key": "Name",
+            "Value": "VPC with Windows CLI"
+          }
+        ]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "DependsOn": "VPC"
+    },
+    "AttachGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "DependsOn": [
+        "VPC",
+        "InternetGateway"
+      ],
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnet1Param"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public Subnet 1"
+          }
+        ]
+      }
+    },
+    "PublicSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnet2Param"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public Subnet 2"
+          }
+        ]
+      }
+    },
+    "PrivateSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PrivateSubnet1Param"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Private Subnet 1"
+          }
+        ]
+      }
+    },
+    "PrivateSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PrivateSubnet2Param"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Private Subnet 2"
+          }
+        ]
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "DependsOn": [
+        "VPC",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Public"
+          }
+        ]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": [
+        "PublicRouteTable",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "DependsOn": [
+        "PublicRouteTable",
+        "PublicSubnet1",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet1"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PublicSubnet2RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "DependsOn": [
+        "PublicRouteTable",
+        "PublicSubnet2"
+      ],
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet2"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PrivateRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Private"
+          }
+        ]
+      }
+    },
+    "PrivateSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "DependsOn": [
+        "PublicRouteTable",
+        "PrivateSubnet1",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnet1"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateSubnet2RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "DependsOn": [
+        "PublicRouteTable",
+        "PrivateSubnet2",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnet2"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateNetworkAcl": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Network",
+            "Value": "Private"
+          }
+        ]
+      }
+    },
+    "NATInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "AttachGateway",
+        "PublicRoute",
+        "PublicSubnet1",
+        "PublicSubnet2"
+      ],
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AmazonLinuxAMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMI"
+          ]
+        },
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "InstanceType": "t2.small",
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "AssociatePublicIpAddress": "true",
+            "SubnetId": {
+              "Ref": "PublicSubnet1"
+            },
+            "GroupSet": [
+              {
+                "Ref": "NATSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "SourceDestCheck": "false",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "NAT"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                "yum -y update",
+                "echo 1 > /proc/sys/net/ipv4/ip_forward",
+                "echo 0 > /proc/sys/net/ipv4/conf/eth0/send_redirects",
+                "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE",
+                "/sbin/iptables-save > /etc/sysconfig/iptables",
+                "mkdir -p /etc/sysctl.d/",
+                "cat <<EOF > /etc/sysctl.d/nat.conf",
+                "net.ipv4.ip_forward = 1",
+                "net.ipv4.conf.eth0.send_redirects = 0",
+                "EOF \n"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "NATSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "GroupDescription": "Enable internal access to the NAT device",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "1024",
+            "CidrIp": {
+              "Ref": "PrivateSubnet1Param"
+            }
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "0",
+            "ToPort": "1024",
+            "CidrIp": {
+              "Ref": "PrivateSubnet1Param"
+            }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "1024",
+            "CidrIp": {
+              "Ref": "PrivateSubnet2Param"
+            }
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "0",
+            "ToPort": "1024",
+            "CidrIp": {
+              "Ref": "PrivateSubnet2Param"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "PrivateRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": [
+        "NATInstance",
+        "PrivateRouteTable"
+      ],
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "InstanceId": {
+          "Ref": "NATInstance"
+        }
+      }
+    },
+    "CLISecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "GroupDescription": "Security Group for CLIEC2Instance",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "CLISecurityGroup"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "udp",
+            "FromPort": "0",
+            "ToPort": "65535",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "3389",
+            "ToPort": "3389",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "RootRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "*",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "RootInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "DependsOn": "RootRole",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "RootRole"
+          }
+        ]
+      }
+    },
+    "WaitHandle01": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "WaitCondition01": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "DependsOn": "CLIEC2Instance",
+      "Properties": {
+        "Handle": {
+          "Ref": "WaitHandle01"
+        },
+        "Timeout": "1800"
+      }
+    },
+    "CLIEC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "RootInstanceProfile",
+        "PublicSubnet2",
+        "CLISecurityGroup",
+        "AttachGateway"
+      ],
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "IamInstanceProfile": {
+          "Ref": "RootInstanceProfile"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "Win2012R2AMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMI"
+          ]
+        },
+        "InstanceType": "t2.medium",
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "AssociatePublicIpAddress": "true",
+            "SubnetId": {
+              "Ref": "PublicSubnet2"
+            },
+            "GroupSet": [
+              {
+                "Ref": "CLISecurityGroup"
+              }
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Command Line Instance"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<powershell>\n",
+                "New-Item -ItemType directory -Path 'C:\\temp', 'C:\\temp\\aws'\n",
+                "$webclient = New-Object System.Net.WebClient\n",
+                "$webclient.DownloadFile('https://s3.amazonaws.com/aws-cli/AWSCLI64.msi','C:\\temp\\aws\\AWSCLI64.msi')\n",
+                "Start-Process 'C:\\temp\\aws\\AWSCLI64.msi' -ArgumentList /qn -Wait\n",
+                "New-Item -ItemType directory -Path 'C:\\Users\\Administrator\\.aws'\n",
+                "$ConfigSet = @\"\r\n",
+                "[default]\r\n",
+                "region = ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\r\n",
+                "\"@\r\n",
+                "New-Item -ItemType file -Path 'C:\\Users\\Administrator\\.aws\\config' -Value $ConfigSet\n",
+                "cfn-signal.exe -s true '",
+                {
+                  "Ref": "WaitHandle01"
+                },
+                "'\n",
+                "</powershell>\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}
