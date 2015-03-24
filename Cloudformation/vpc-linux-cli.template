@@ -45,7 +45,7 @@
     "KeyName": {
       "Type": "String",
       "Description": "Keyname for the keypair that Qwiklab will use to launch EC2 instances",
-      "Default": "default-lab-key"
+      "Default": "default-ec2-key"
     }
   },
   "Mappings": {
