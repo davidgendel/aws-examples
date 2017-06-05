@@ -5,4 +5,4 @@ This public repo is a simple collection of examples and proof of concept solutio
 
 This repo is subdivided into several sections, implemented via folders. Each top level folder will hold examples related to a specific subject area or platform. For example, under the Amazon Linux folder, you will find bootstrapping (user data scripts) examples that were written for Amazon Linux.
 
-.
+...
