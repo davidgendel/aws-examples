@@ -10,6 +10,10 @@ wget -q -O /usr/local/bin/jq http://stedolan.github.io/jq/download/linux64/jq
 chmod 755 /usr/local/bin/jq
 fi
 
+#
+# Test
+#
+
 # check timing of backup 'outage' via logger timestamps
 logger Start EBS snapshot backup process
 
