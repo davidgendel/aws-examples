@@ -354,7 +354,7 @@ Resources:
           service chronyd start
           chkconfig --level 345 chronyd on
           wget https://s3.amazonaws.com/testing-example-gendel/tux -O /etc/tux
-          echo Banner /etc/tux >> /etc/ssh/sshd_config
+          echo -e '\nBanner /etc/tux' >> /etc/ssh/sshd_config
           service sshd restart
   BastionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
