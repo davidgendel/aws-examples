@@ -1,663 +1,408 @@
-{
-  "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Baseline Cloudformation - VPC, NAT, and Linux CLI Instance using an IAM Role(updated 03/24/2014)",
-  "Parameters": {
-    "VPCCIDR": {
-      "Description": "CIDR Block for VPC",
-      "Type": "String",
-      "Default": "10.5.0.0/16",
-      "AllowedValues": [
-        "10.5.0.0/16"
-      ]
-    },
-    "PublicSubnet1Param": {
-      "Description": "Public Subnet 1",
-      "Type": "String",
-      "Default": "10.5.10.0/24",
-      "AllowedValues": [
-        "10.5.10.0/24"
-      ]
-    },
-    "PublicSubnet2Param": {
-      "Description": "Public Subnet 2",
-      "Type": "String",
-      "Default": "10.5.15.0/24",
-      "AllowedValues": [
-        "10.5.15.0/24"
-      ]
-    },
-    "PrivateSubnet1Param": {
-      "Description": "Private Subnet 1",
-      "Type": "String",
-      "Default": "10.5.50.0/24",
-      "AllowedValues": [
-        "10.5.50.0/24"
-      ]
-    },
-    "PrivateSubnet2Param": {
-      "Description": "Private Subnet 2",
-      "Type": "String",
-      "Default": "10.5.55.0/24",
-      "AllowedValues": [
-        "10.5.55.0/24"
-      ]
-    },
-    "KeyName": {
-      "Type": "String",
-      "Description": "Keyname for the keypair that Qwiklab will use to launch EC2 instances",
-      "Default": "default-ec2-key"
-    }
-  },
-  "Mappings": {
-    "AmazonLinuxAMI": {
-      "us-east-1": {
-        "AMI": "ami-1ecae776"
-      },
-      "us-west-2": {
-        "AMI": "ami-e7527ed7"
-      },
-      "us-west-1": {
-        "AMI": "ami-d114f295"
-      },
-      "eu-west-1": {
-        "AMI": "ami-a10897d6"
-      },
-      "eu-central-1": {
-        "AMI": "ami-a8221fb5"
-      },
-      "ap-southeast-1": {
-        "AMI": "ami-68d8e93a"
-      },
-      "ap-northeast-1": {
-        "AMI": "ami-cbf90ecb"
-      },
-      "ap-southeast-2": {
-        "AMI": "ami-fd9cecc7"
-      },
-      "sa-east-1": {
-        "AMI": "ami-b52890a8"
-      }
-    }
-  },
-  "Resources": {
-    "VPC": {
-      "Type": "AWS::EC2::VPC",
-      "Properties": {
-        "CidrBlock": {
-          "Ref": "VPCCIDR"
-        },
-        "EnableDnsSupport": "true",
-        "EnableDnsHostnames": "true",
-        "Tags": [
-          {
-            "Key": "VPC",
-            "Value": "NAT-and-CLI"
-          },
-          {
-            "Key": "Name",
-            "Value": "CLI VPC"
-          }
-        ]
-      }
-    },
-    "InternetGateway": {
-      "Type": "AWS::EC2::InternetGateway",
-      "DependsOn": "VPC"
-    },
-    "AttachGateway": {
-      "Type": "AWS::EC2::VPCGatewayAttachment",
-      "DependsOn": [
-        "VPC",
-        "InternetGateway"
-      ],
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "InternetGatewayId": {
-          "Ref": "InternetGateway"
-        }
-      }
-    },
-    "PublicSubnet1": {
-      "Type": "AWS::EC2::Subnet",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "CidrBlock": {
-          "Ref": "PublicSubnet1Param"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            "0",
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Public Subnet 1"
-          }
-        ]
-      }
-    },
-    "PublicSubnet2": {
-      "Type": "AWS::EC2::Subnet",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "CidrBlock": {
-          "Ref": "PublicSubnet2Param"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            "1",
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Public Subnet 2"
-          }
-        ]
-      }
-    },
-    "PrivateSubnet1": {
-      "Type": "AWS::EC2::Subnet",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "CidrBlock": {
-          "Ref": "PrivateSubnet1Param"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            "0",
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Private Subnet 1"
-          }
-        ]
-      }
-    },
-    "PrivateSubnet2": {
-      "Type": "AWS::EC2::Subnet",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "CidrBlock": {
-          "Ref": "PrivateSubnet2Param"
-        },
-        "AvailabilityZone": {
-          "Fn::Select": [
-            "1",
-            {
-              "Fn::GetAZs": ""
-            }
-          ]
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Private Subnet 2"
-          }
-        ]
-      }
-    },
-    "PublicRouteTable": {
-      "Type": "AWS::EC2::RouteTable",
-      "DependsOn": [
-        "VPC",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Public"
-          }
-        ]
-      }
-    },
-    "PublicRoute": {
-      "Type": "AWS::EC2::Route",
-      "DependsOn": [
-        "PublicRouteTable",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        },
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "GatewayId": {
-          "Ref": "InternetGateway"
-        }
-      }
-    },
-    "PublicSubnet1RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "DependsOn": [
-        "PublicRouteTable",
-        "PublicSubnet1",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "SubnetId": {
-          "Ref": "PublicSubnet1"
-        },
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        }
-      }
-    },
-    "PublicSubnet2RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "DependsOn": [
-        "PublicRouteTable",
-        "PublicSubnet2"
-      ],
-      "Properties": {
-        "SubnetId": {
-          "Ref": "PublicSubnet2"
-        },
-        "RouteTableId": {
-          "Ref": "PublicRouteTable"
-        }
-      }
-    },
-    "PrivateRouteTable": {
-      "Type": "AWS::EC2::RouteTable",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Private"
-          }
-        ]
-      }
-    },
-    "PrivateSubnet1RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "DependsOn": [
-        "PublicRouteTable",
-        "PrivateSubnet1",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "SubnetId": {
-          "Ref": "PrivateSubnet1"
-        },
-        "RouteTableId": {
-          "Ref": "PrivateRouteTable"
-        }
-      }
-    },
-    "PrivateSubnet2RouteTableAssociation": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "DependsOn": [
-        "PublicRouteTable",
-        "PrivateSubnet2",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "SubnetId": {
-          "Ref": "PrivateSubnet2"
-        },
-        "RouteTableId": {
-          "Ref": "PrivateRouteTable"
-        }
-      }
-    },
-    "PrivateNetworkAcl": {
-      "Type": "AWS::EC2::NetworkAcl",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Network",
-            "Value": "Private"
-          }
-        ]
-      }
-    },
-    "NATInstance": {
-      "Type": "AWS::EC2::Instance",
-      "DependsOn": [
-        "AttachGateway",
-        "PublicRoute",
-        "PublicSubnet1",
-        "PublicSubnet2"
-      ],
-      "Properties": {
-        "ImageId": {
-          "Fn::FindInMap": [
-            "AmazonLinuxAMI",
-            {
-              "Ref": "AWS::Region"
-            },
-            "AMI"
-          ]
-        },
-        "KeyName": {
-          "Ref": "KeyName"
-        },
-        "InstanceType": "t2.small",
-        "NetworkInterfaces": [
-          {
-            "DeviceIndex": "0",
-            "AssociatePublicIpAddress": "true",
-            "SubnetId": {
-              "Ref": "PublicSubnet1"
-            },
-            "GroupSet": [
-              {
-                "Ref": "NATSecurityGroup"
-              }
-            ]
-          }
-        ],
-        "SourceDestCheck": "false",
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "NAT"
-          }
-        ],
-        "UserData": {
-          "Fn::Base64": {
-            "Fn::Join": [
-              "\n",
-              [
-                "#!/bin/bash",
-                "yum -y update",
-                "echo 1 > /proc/sys/net/ipv4/ip_forward",
-                "echo 0 > /proc/sys/net/ipv4/conf/eth0/send_redirects",
-                "/sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE",
-                "/sbin/iptables-save > /etc/sysconfig/iptables",
-                "mkdir -p /etc/sysctl.d/",
-                "cat <<EOF > /etc/sysctl.d/nat.conf",
-                "net.ipv4.ip_forward = 1",
-                "net.ipv4.conf.eth0.send_redirects = 0",
-                "EOF \n"
-              ]
-            ]
-          }
-        }
-      }
-    },
-    "NATSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "GroupDescription": "Enable internal access to the NAT device",
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "0",
-            "ToPort": "1024",
-            "CidrIp": {
-              "Ref": "PrivateSubnet1Param"
-            }
-          },
-          {
-            "IpProtocol": "udp",
-            "FromPort": "0",
-            "ToPort": "1024",
-            "CidrIp": {
-              "Ref": "PrivateSubnet1Param"
-            }
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "0",
-            "ToPort": "1024",
-            "CidrIp": {
-              "Ref": "PrivateSubnet2Param"
-            }
-          },
-          {
-            "IpProtocol": "udp",
-            "FromPort": "0",
-            "ToPort": "1024",
-            "CidrIp": {
-              "Ref": "PrivateSubnet2Param"
-            }
-          }
-        ],
-        "SecurityGroupEgress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "0",
-            "ToPort": "65535",
-            "CidrIp": "0.0.0.0/0"
-          },
-          {
-            "IpProtocol": "udp",
-            "FromPort": "0",
-            "ToPort": "65535",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ]
-      }
-    },
-    "PrivateRoute": {
-      "Type": "AWS::EC2::Route",
-      "DependsOn": [
-        "NATInstance",
-        "PrivateRouteTable"
-      ],
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "PrivateRouteTable"
-        },
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "InstanceId": {
-          "Ref": "NATInstance"
-        }
-      }
-    },
-    "CLISecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "DependsOn": "AttachGateway",
-      "Properties": {
-        "GroupDescription": "Security Group for CLIEC2Instance",
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "CLISecurityGroup"
-          }
-        ],
-        "SecurityGroupEgress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "0",
-            "ToPort": "65535",
-            "CidrIp": "0.0.0.0/0"
-          },
-          {
-            "IpProtocol": "udp",
-            "FromPort": "0",
-            "ToPort": "65535",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ],
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "22",
-            "ToPort": "22",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ]
-      }
-    },
-    "RootRole": {
-      "Type": "AWS::IAM::Role",
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": [
-                  "ec2.amazonaws.com"
-                ]
-              },
-              "Action": [
-                "sts:AssumeRole"
-              ]
-            }
-          ]
-        },
-        "Path": "/",
-        "Policies": [
-          {
-            "PolicyName": "root",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Action": "*",
-                  "Resource": "*"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "RootInstanceProfile": {
-      "Type": "AWS::IAM::InstanceProfile",
-      "DependsOn": "RootRole",
-      "Properties": {
-        "Path": "/",
-        "Roles": [
-          {
-            "Ref": "RootRole"
-          }
-        ]
-      }
-    },
-    "WaitHandle01": {
-      "Type": "AWS::CloudFormation::WaitConditionHandle",
-      "Properties": {}
-    },
-    "WaitCondition01": {
-      "Type": "AWS::CloudFormation::WaitCondition",
-      "DependsOn": "CLIEC2Instance",
-      "Properties": {
-        "Handle": {
-          "Ref": "WaitHandle01"
-        },
-        "Timeout": "1800"
-      }
-    },
-    "CLIEC2Instance": {
-      "Type": "AWS::EC2::Instance",
-      "DependsOn": [
-        "RootInstanceProfile",
-        "PublicSubnet2",
-        "CLISecurityGroup",
-        "AttachGateway"
-      ],
-      "Properties": {
-        "KeyName": {
-          "Ref": "KeyName"
-        },
-        "IamInstanceProfile": {
-          "Ref": "RootInstanceProfile"
-        },
-        "ImageId": {
-          "Fn::FindInMap": [
-            "AmazonLinuxAMI",
-            {
-              "Ref": "AWS::Region"
-            },
-            "AMI"
-          ]
-        },
-        "InstanceType": "t2.medium",
-        "NetworkInterfaces": [
-          {
-            "DeviceIndex": "0",
-            "AssociatePublicIpAddress": "true",
-            "SubnetId": {
-              "Ref": "PublicSubnet2"
-            },
-            "GroupSet": [
-              {
-                "Ref": "CLISecurityGroup"
-              }
-            ]
-          }
-        ],
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Command Line Instance"
-          }
-        ],
-        "UserData": {
-          "Fn::Base64": {
-            "Fn::Join": [
-              "",
-              [
-                "#!/bin/bash -ex \n",
-                "yum -y update \n",
-                "mkdir /home/ec2-user/.aws \n",
-                "cat > /home/ec2-user/.aws/config <<EOF\n",
-                "[default]\n",
-                "region = us-west-2\n",
-                "EOF\n",
-                "chown -R ec2-user:ec2-user /home/ec2-user/.aws\n",
-                "/opt/aws/bin/cfn-signal -s true '",
-                {
-                  "Ref": "WaitHandle01"
-                },
-                "'\n"
-              ]
-            ]
-          }
-        }
-      }
-    }
-  }
-}
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This is an example Cloudformation template using YAML. This
+  template will provide you a VPC, with 2 public and 2 private subnets, 
+  taking advantage of NAT Gateway. Additionally this template will provide
+  you an Amazon Linux CLI host with a public IP address. ***WARNING*** 
+  Deploying this template will incur AWS charges.
+Parameters:
+  VPCCIDRBLOCK:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.250.0.0/19
+    Description: CIDR Block for the VPC
+    Type: String
+  PubSubnet1:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.250.0.0/22
+    Description: CIDR block for public subnet 1 located in Availability Zone 1.
+    Type: String
+  PubSubnet2:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.250.4.0/22
+    Description: CIDR block for public subnet 2 located in Availability Zone 2.
+    Type: String
+  PrivSubnet1:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.250.16.0/22
+    Description: CIDR Block for the private subnet 1 located in Availability Zone 1
+    Type: String
+  PrivSubnet2:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.250.20.0/22
+    Description: CIDR Block for the private subnet 2 located in Availability Zone 2
+    Type: String
+  EnvironmentTag:
+    Default: Development
+    Description: The tag to include on all created resources to make identification easy.
+    Type: String
+  CLIInstanceType:
+    Default: t2.micro
+    Description: The EC2 instance type for the CLI Instance
+    Type: String
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - m5.large
+      - m5.xlarge
+      - c5.large
+      - c5.xlarge
+      - r4.large
+      - r4.xlarge
+  CLIInstanceKey:
+    Description: The EC2 instance KeyPair for the CLI Instance - this keypair must already exist in your account
+    Type: AWS::EC2::KeyPair::KeyName
+Mappings:
+  AMAZONLINUXAMI:
+# This AMI list represents Amazon Linux AMI 2017.09.1 which was released on 2017-11-22    
+    us-east-1:
+      AMI: ami-55ef662f
+    us-east-2:
+      AMI: ami-15e9c770
+    us-west-2:
+      AMI: ami-bf4193c7
+    us-west-1:
+      AMI: ami-a51f27c5
+    ca-central-1:
+      AMI: ami-d29e25b6
+    eu-west-1:
+      AMI: ami-1a962263
+    eu-west-2:
+      AMI: ami-e7d6c983
+    eu-central-1:
+      AMI: ami-bf2ba8d0
+    ap-southeast-1:
+      AMI: ami-c63d6aa5
+    ap-southeast-2:
+      AMI: ami-ff4ea59d
+    ap-northeast-1:
+      AMI: ami-da9e2cbc
+    ap-northeast-2:
+      AMI: ami-1196317f
+    sa-east-1:
+      AMI: ami-286f2a44
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VPCCIDRBLOCK
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway          
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Ref: PubSubnet1
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs: ''
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Ref: PubSubnet2
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs: ''
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Ref: PrivSubnet1
+      AvailabilityZone:
+        Fn::Select:
+        - '0'
+        - Fn::GetAZs: ''
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      CidrBlock:
+        Ref: PrivSubnet2
+      AvailabilityZone:
+        Fn::Select:
+        - '1'
+        - Fn::GetAZs: ''
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - PublicSubnet1
+    - AttachGateway
+    - PublicRouteTable
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet1
+      RouteTableId:
+        Ref: PublicRouteTable
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - PublicSubnet2
+    - AttachGateway
+    - PublicRouteTable
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet2
+      RouteTableId:
+        Ref: PublicRouteTable
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - AttachGateway
+    - PrivateSubnet1
+    - PrivateRouteTable1
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet1
+      RouteTableId:
+        Ref: PrivateRouteTable1
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+    - AttachGateway
+    - PrivateSubnet2
+    - PrivateRouteTable2
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet2
+      RouteTableId:
+        Ref: PrivateRouteTable2
+  PrivateNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    DependsOn: AttachGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  NAT1EIP:
+    DependsOn: AttachGateway
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NAT2EIP:
+    DependsOn: AttachGateway
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NATGateway1:
+    DependsOn:
+      - PublicSubnet1
+      - NAT1EIP   
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - NAT1EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet1
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  NATGateway2:
+    DependsOn:
+      - NAT2EIP
+      - PublicSubnet2   
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - NAT2EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet2
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  CLIInstance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+    - NATGateway1
+    - NATGateway2
+    - CLISecurityGroup
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AMAZONLINUXAMI
+        - Ref: AWS::Region
+        - AMI
+      InstanceType:
+        Ref: CLIInstanceType
+      KeyName:
+        Ref: CLIInstanceKey
+      NetworkInterfaces:
+      - DeviceIndex: '0'
+        AssociatePublicIpAddress: 'true'
+        SubnetId:
+          Ref: PublicSubnet1
+        GroupSet:
+        - Ref: CLISecurityGroup
+      Tags:
+      - Key: Name
+        Value: CLI Instance
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+# UserData to update OS, update AWSCLI, and replace ntp with Chrony        
+# Also show example of downloding a publicly accessible file from S3 and using it locally
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum -y update
+          pip install --upgrade pip &> /dev/null
+          pip install awscli --ignore-installed six &> /dev/null
+          yum -y erase ntp*
+          yum -y install chrony
+          service chronyd start
+          chkconfig --level 345 chronyd on
+          mkdir /home/ec2-user/.aws
+          cat > /home/ec2-user/.aws/config <<EOF
+          [default]
+          region = ${AWS::Region}
+          EOF
+          chown -R ec2-user:ec2-user /home/ec2-user/.aws
+  CLISecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn:
+      - PublicSubnet2
+      - PublicSubnet1
+    Properties:
+      GroupDescription: Enable SSH access to CLI host
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag        
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway1
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NATGateway1
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    DependsOn: NATGateway2
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NATGateway2
+Outputs:
+  CLIInstanceIP:
+    Description: The public IP address for the Linux CLI Instance.
+    Value: !GetAtt CLIInstance.PublicIp
+  CLIInstanceUser:
+    Description: The username to connect to the CLI Instance.
+    Value: ec2-user
+  CLIInstanceKeyPair:
+    Description: The EC2 Keypair to authenticate to the CLI Instance
+    Value: 
+      Ref: CLIInstanceKey
