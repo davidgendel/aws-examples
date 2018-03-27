@@ -1,0 +1,77 @@
+Goal/Objective: 
+Provide Serverless CMS based website hosting for simple, low rate of change websites. 
+
+
+Primary candidates:
+Websites that are intended to be 'posters', or providing information for mass consumption - e.g. a company's public facing corporate website, or a simple blog.
+
+
+Technologies leveraged:
+AWS - EC2, S3, Cloudfront, RDS, Lambda, Cloudformation, API Gateway, ACM
+Other - Wordpress, Drupal, etc... (any CMS that can export the website as html)
+
+Cost Comparison:
+Traditional: Two EC2 (m4.large) + MultiAZ RDS (m4.large) + ELB (100GB) --> $450/month
+Serverless: 40% utilized EC2 (t2.medium) + 40% utilized SingleAZ RDS (t2.large) + S3 (25GBstore/25GBbandwidth/1mm-POST/10mm-GET) + Cloudfront (100GB) --> $94/month
+
+High Level Summary:
+This reference architecture focuses on two principles: 
+1. Only run infrastructure when you need it to do work; 
+2. Design services, not servers. 
+
+The solution leverages a Cloudformation template that configures the launching and termination of our EC2 instance and RDS database. There is a Lambda function, triggered by an API Gateway call, which will programmatically determine the most recent RDS snapshot to use - ensuring we have the latest copy of the database. This Lambda function then triggers the Cloudformation template, supplying the RDS snapshot ID, and creates a stack containing both the RDS database and EC2 instance. Additionally, the Cloudformation template will create DNS records for the application to use. The Wordpress installation is using a plugin called: Simply Static, which is the publishing function. When the author has previewed their changes on the EC2 instance, and is ready to publish the updated website, they manually execute the plugin through the Wordpress control panel, and the site will be exported to HTML on the server file system. There is an AWS command line running via cron schedule every 2 minutes, which will then synchronize the local copy of the HTML website to the predetermined S3 bucket. After publishing is completed, there is a second Lambda function, also triggered through an API Gateway call, to terminate the Cloudformation stack. The Cloudformation template is configured to automatically have RDS create a snapshot on termination, ensuring each time we launch the template, we always have the most current copy of the database.
+
+The actual public facing website is served out of an S3 bucket with a Cloudfront distribution, and can support HTTP as well as HTTPS.
+
+
+Considerations:
+This approach moves your hosting into an S3 bucket, and therefore removes any server based code or logic. This means that you cannot rely on server-side logic in your website or blog. For example, the default comment functionality will not work and will need to be disabled for Wordpress, however you can leverage external or client side solutions, such as Disqus for comments.
+
+
+Options or Alternatives:
+There are a few parts of this reference architecture that can be implemented differently to achieve different results. For example, in this reference architecture we selected Wordpress - however any CMS that supports HTML export can be substituted. This is a brief example list of architecture decisions that have alternatives or options available-
+
+	1. CMS choice (this example uses Wordpress)
+	2. Database choice (this example uses MariaDB)
+	3. Static Export Plugin choice (this example uses Simply Static)
+	4. Synchronization script choice (this example uses the AWS CLI - S3 sync)
+	5. The decision to keep the CMS EC2 AMI static (this example does not provide for updated AMI images for the EC2 instance or dynamic bootstrapping from S3)
+
+
+Code snippets:
+1. The Lambda function to launch the Cloudformation stack
+2. The Lambda function to terminate the Cloudformation stack
+3. The Cloudformation template to create the baseline environment for this reference architecture
+4. The Cloudformation template, including the bootstrapping code, to launch the CMS system on EC2 and RDS
+
+
+How to Launch this Reference Architecture:
+1. Launch the baseline Cloudformation template, providing appropriate values for the parameters - rackspace-serverless-webhosting-baseline.cform. 
+     *Note - be sure to provide a proper and valid S3 bucket name which will match the DNS CNAME you will use later.
+2. Make a note of all of the Cloudformation outputs - these values will be used later when launching the next Cloudformation template - rackspace-serverless-webhosting-cms.cform.
+3. If you do not already have one, create an EC2 KeyPair and note the name of this KeyPair. Later you will use this with the next Cloudformation template - parameter:  EC2KeyPair.
+4. Create a Cloudfront web distribution using the created S3 bucket website hosting address as an origin (do not use the default endpoint), and use ACM for an SSL certificate (you will need to create a new certificate if you don't already have one).
+7. Create an EC2 IAM role that provides access to read/write your S3 bucket.
+8. Update the DNS names and zones in the Cloudformation template: rackspace-serverless-webhosting-cms.cform, to match your DNS zone.
+8. Create a Lambda role that provides access to read RDS and read/execute/terminate Cloudformation.
+9. Create an RDS instance using the settings in the included Cloudformation template as a baseline, including the instance name of 'wordpress'. Note the username and password that you assign the instance, as well as the endpoint provided.
+10. Create an EC2 instance using the settings in the included Cloudformation template as a baseline, including using the role you created earlier for EC2. If you don't have a VPN or jump box set up, launch this in a public subnet.
+11. Create a CNAME in Route53 for the database. Note this CNAME, later you will use this with the next Cloudformation template - parameter:  route53RSDB.
+12. Create an ALIAS in Route53 for your Cloudfront Distribution (*note that this must exactly match the name of the origin S3 bucket).
+13. Log in to the EC2 instance and install Wordpress, using the Route53 CNAME for the database connection endpoint (don't use the RDS endpoint directly as that will change).
+14. In the EC2 instance, create a folder that we will use for the local copy of the static export: /var/www/export. Ensure you give the proper users permission to write to this folder (e.g. apache)
+15. Install the Wordpress plugin Simply Static, and configure it to use the local export folder you just created and the ALIAS DNS name you gave your Cloudfront distribution.
+16. Create your blog or website to meet your needs.
+17. Stop your EC2 instance and create an AMI from it. Make a note of your EC2 AMI ID, update the default value of the parameter: EC2Image, in the Cloudformation template - rackspace-serverless-webhosting-cms.cform.
+18. Take a manual snapshot of your RDS instance, and when completed terminate your database instance. Make a note of your RDS snapshot ID and update the default for the Cloudformation parameter: RDSSnapshot, in the Cloudformation template - rackspace-serverless-webhosting-cms.cform.
+19. Create a Lambda function for launching the stack, using the code: lambda_launch_cfn.py. Use the role you created earlier for this purpose (Lambda).
+20. Create a Lambda function for terminating the stack, using the code: lambda_terminate_cfn.py. Use the role you created earlier for this purpose (Lambda).
+21. Using API Gateway, create an API to trigger each of your Lambda functions.
+22. Using the "launch" API, create your Cloudformation stack.
+23. Log into your Wordpress instance using the provided DNS (check your Cloudformation) and use the publish function - the Simply Static plugin. Wait at least 4 minutes for the publish cycle to copy your content to S3.
+24. Test your website using the Route53 ALIAS you created earlier (this ALIAS record is pointing at your Cloudfront Distribution).
+25. Once satisfied with your content, use the "terminate" API to delete your EC2 instance and RDS database instance.
+
+
+
+
