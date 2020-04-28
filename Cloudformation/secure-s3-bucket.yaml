@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Example template to create an S3 bucket with default encryption enabled and block public access in the region this stack is executed. This template is provided as an example and comes with no warranty or guarantees expressed or implied. You should always review and understand your requirements and implement proper controls and designs to meet those requirements. 
+
+Parameters:
+  BucketName: 
+    Type: String
+    Description: You need to provide a unique name for your bucket that meets S3 requirements.
+
+Resources:
+  SecureS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
