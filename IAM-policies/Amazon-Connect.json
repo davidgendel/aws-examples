@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "7d1f9045198a39d401c596a8fd4ef59a",
+      "Action": "connect:*",
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
