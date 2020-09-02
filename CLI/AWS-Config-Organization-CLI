@@ -1,8 +1,8 @@
 AWS Config Put Organization Conformance Pack:
 
-$ aws --profile aws2 configservice put-organization-conformance-pack --organization-conformance-pack-name gendel-org-s3-bucket --delivery-s3-bucket awsconfigconforms-gendel --template-s3-uri s3://gendel-config-reports/aws-config-conformancepack-s3-bp.yaml
+$ aws configservice put-organization-conformance-pack --organization-conformance-pack-name my-org-s3-bucket --delivery-s3-bucket awsconfigconforms-bucket --template-s3-uri s3://my-config-reports/aws-config-conformancepack-s3-bp.yaml
 {
-    "OrganizationConformancePackArn": "arn:aws:config:us-east-1:091042585556:organization-conformance-pack/gendel-org-s3-bucket-hvozvewk"
+    "OrganizationConformancePackArn": "arn:aws:config:us-east-1:0123456798:organization-conformance-pack/my-org-s3-bucket-hvozvewk"
 }
 
 
@@ -18,9 +18,9 @@ WHERE:
 
 AWS Config Put Organization Config Rule
 
-$ aws --profile aws2 configservice put-organization-config-rule --organization-config-rule-name org-acm-certificate-expiration-check --organization-managed-rule-metadata '{"Description": "Org-ACM-Check","RuleIdentifier":"ACM_CERTIFICATE_EXPIRATION_CHECK","InputParameters":"{\"daysToExpiration\":\"14\"}", "ResourceTypesScope":["AWS::ACM::Certificate"]}'
+$ aws configservice put-organization-config-rule --organization-config-rule-name org-acm-certificate-expiration-check --organization-managed-rule-metadata '{"Description": "Org-ACM-Check","RuleIdentifier":"ACM_CERTIFICATE_EXPIRATION_CHECK","InputParameters":"{\"daysToExpiration\":\"14\"}", "ResourceTypesScope":["AWS::ACM::Certificate"]}'
 {
-    "OrganizationConfigRuleArn": "arn:aws:config:us-east-1:091042585556:organization-config-rule/org-acm-certificate-expiration-check-lbjiis3l"
+    "OrganizationConfigRuleArn": "arn:aws:config:us-east-1:0123456798:organization-config-rule/org-acm-certificate-expiration-check-lbjiis3l"
 }
 
 
