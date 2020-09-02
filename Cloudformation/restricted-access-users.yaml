@@ -1,0 +1,119 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  This is an example template for providing access to AWS resources via IAM accounts, with some basic guardrails in place.
+
+Parameters:
+
+  GroupName:
+    Type: String
+    Default: RestrictedAccess
+    Description: The name of the IAM Group
+
+  PW01:
+    Type: String
+    Default: AWS-P@ssw0rd-2020
+    Description: The default password for user accounts
+
+Resources:
+
+  RestrictedAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties: 
+      Description:  Restricted Access Policy 
+      ManagedPolicyName: RestrictedAccess
+      Path: "/"
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          NotAction:
+          - iam:*
+          - organizations:*
+          - account:*
+          - ec2:ExportImage
+          - ec2:GetCapacityReservationUsage
+          - ec2:GetHostReservationPurchasePreview
+          - ec2:GetReservedInstancesExchangeQuote
+          - ec2:ModifyReservedInstances
+          - ec2:PurchaseHostReservation
+          - ec2:PurchaseReservedInstancesOffering
+          - ec2:PurchaseScheduledInstances
+          - rds:PurchaseReservedDBInstancesOffering
+          - dynamodb:PurchaseReservedCapacityOfferings
+          - redshift:PurchaseReservedNodeOffering
+          - workmail:*
+          - workdocs:*
+          - aws-marketplace:*
+          - mediaconnect:*
+          - aws-portal:*
+          - cloudhsm:*
+          - groundstation:*
+          - outposts:*
+          - shield:*
+          - snowball:*
+          - support:*
+          - groundtruthlabeling:*
+          - route53domains:*
+          - savingsplans:CreateSavingsPlan
+          - directconnect:*
+          - glacier:CompleteVaultLock
+          - glacier:InitiateVaultLock
+          - glacier:PurchaseProvisionedCapacity
+          Resource: "*"
+        - Effect: Allow
+          Action:
+          - iam:CreateServiceLinkedRole
+          - iam:DeleteServiceLinkedRole
+          - iam:PassRole
+          - iam:List*
+          - organizations:DescribeOrganization
+          - account:ListRegions
+          Resource: "*"
+        - Effect: Deny
+          Action: ec2:RunInstances
+          Resource: "*"
+          Condition:
+            ForAnyValue:StringNotLike:
+                ec2:InstanceType:
+                    - "*.nano"
+                    - "*.small"
+                    - "*.micro"
+                    - "*.medium"
+                    - "*.large"
+  RestrictedAccessGroup:
+    Type: AWS::IAM::Group
+    DependsOn: RestrictedAccessPolicy
+    Properties: 
+      GroupName: !Ref GroupName
+      ManagedPolicyArns: 
+        - !Ref RestrictedAccessPolicy
+      Path: "/restrictedaccess/"
+
+  User1:
+    Type: AWS::IAM::User
+    DependsOn: RestrictedAccessGroup
+    Properties: 
+      Groups: 
+        - !Ref GroupName
+      LoginProfile: 
+        Password: !Ref PW01
+        PasswordResetRequired: Yes
+      Path: "/restrictedaccess/"
+      UserName: AWS@01
+
+  User2:
+    Type: AWS::IAM::User
+    DependsOn: RestrictedAccessGroup
+    Properties: 
+      Groups: 
+        - !Ref GroupName
+      LoginProfile: 
+        Password: !Ref PW01
+        PasswordResetRequired: Yes
+      Path: "/restrictedaccess/"
+      UserName: AWS@02
+
+
+
