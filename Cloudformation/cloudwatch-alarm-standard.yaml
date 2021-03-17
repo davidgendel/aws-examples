@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  This is a template to deploy a CloudWatch billing alarm based on specific threshold and a specific Linked Account for AWS Utilization via CloudFormation. This example comes with no warranty expressed or implied - deploying this template will incur AWS costs. Please review all details of this template and adjust as necessary to meet your specific requirements.
+
+Parameters:
+  AlarmThreshold:
+    Default: 500
+    Description: The dollar value to set as the alarm threshold for this alarm.
+    Type: Number
+  BillingAlarmNotification:
+    Default: SNS TOPIC ARN
+    Description: The ARN of the SNS Topic you want this alarm to notify - for example arn:aws:sns:us-east-1:123456789012:ExampleTopic.
+    Type: String
+  LinkedAccountNum:
+    Default: 1264567890
+    Description: This is the member or child account number you want to monitor and alert on.
+    Type: String
+
+Resources:
+
+  SpendingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 
+        'Fn::Join':
+          - ''
+          - - Alarm if AWS spending is over $
+            - Ref: AlarmThreshold
+      Namespace: AWS/Billing
+      MetricName: EstimatedCharges
+      Dimensions:
+      - Name: Currency
+        Value: USD
+      - Name: LinkedAccount
+        Value: !Ref LinkedAccountNum
+      Statistic: Maximum
+      Period: '43200'
+      EvaluationPeriods: '1'
+      Threshold:
+        Ref: "AlarmThreshold"
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+      - Ref: "BillingAlarmNotification"
+      InsufficientDataActions:
+      - Ref: "BillingAlarmNotification"
