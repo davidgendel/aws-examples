@@ -1,0 +1,68 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  This is a template to deploy a CloudWatch billing alarm based on an anomaly threshold and a specific Linked Account for AWS Utilization via CloudFormation. This example comes with no warranty expressed or implied - deploying this template will incur AWS costs. Please review all details of this template and adjust as necessary to meet your specific requirements.
+
+Parameters:
+  AlarmThreshold:
+    Default: 500
+    Description: The dollar value to set as the alarm threshold for this alarm.
+    Type: Number
+  BillingAlarmNotification:
+    Default: SNS TOPIC ARN
+    Description: The ARN of the SNS Topic you want this alarm to notify - for example arn:aws:sns:us-east-1:123456789012:ExampleTopic.
+    Type: String
+  LinkedAccountNum:
+    Default: 1264567890
+    Description: This is the member or child account number you want to monitor and alert on.
+    Type: String
+  AnomalyRange:
+    Default: 1
+    Description: The standard deviation to use for the Anomaly Detection Threshold - this will impact the width of the band considered 'OK'
+    Type: String
+
+Resources:
+
+  BillingAnomalyDetector:
+    Type: AWS::CloudWatch::AnomalyDetector
+    Properties:
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Stat: Maximum
+      Dimensions:
+        - Name: Currency
+          Value: USD
+        - Name: LinkedAccount
+          Value: !Ref LinkedAccountNum      
+
+  SpendingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 
+        'Fn::Join':
+          - ''
+          - - Alarm if AWS spending is over $
+            - Ref: AlarmThreshold
+      AlarmName: 
+        'Fn::Join':
+          - ''
+          - - Billing-Alert-Anomaly-
+            - Ref: LinkedAccountNum
+      Metrics:
+        - Expression: !Sub
+          - ANOMALY_DETECTION_BAND(m1, ${AnomalyRange})
+          - { AnomalyRange: !Ref AnomalyRange }
+          Id: ad1
+        - Id: m1
+          MetricStat:
+            Metric:
+              MetricName: EstimatedCharges
+              Namespace: AWS/Billing
+            Period: 43200
+            Stat: Maximum
+      ThresholdMetricId: ad1
+      EvaluationPeriods: '1'
+      ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
+      AlarmActions:
+      - Ref: "BillingAlarmNotification"
